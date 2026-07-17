@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert@1";
+import { assertEquals } from "@std/assert";
 import { Catalog, groupByGenre, sortTitle } from "../src/db.ts";
 import { bookletId, movieId } from "../src/id.ts";
 

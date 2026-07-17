@@ -5,7 +5,8 @@
     "test": "deno test --allow-read --allow-write --allow-env tests/"
   },
   "imports": {
-    "qrcode": "npm:qrcode@1.5.4"
+    "qrcode": "npm:qrcode@1.5.4",
+    "@std/assert": "jsr:@std/assert@1"
   },
   "fmt": {
     "lineWidth": 100

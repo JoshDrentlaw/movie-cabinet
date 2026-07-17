@@ -1,4 +1,4 @@
-import { assertEquals, assertNotEquals } from "jsr:@std/assert@1";
+import { assertEquals, assertNotEquals } from "@std/assert";
 import { bookletId, movieId, normalizeText } from "../src/id.ts";
 
 Deno.test("normalizeText collapses punctuation, case and diacritics", () => {

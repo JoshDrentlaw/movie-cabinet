@@ -75,9 +75,36 @@ addition.
 
 ## Updating the app later
 
+Manually, it's one line:
+
 ```sh
 cd /opt/movie-cabinet && git pull && systemctl restart movie-cabinet
 ```
+
+### Automatic deploys on merge to main (recommended)
+
+The `Deploy` GitHub Actions workflow redeploys the droplet on every merge to `main`.
+It needs SSH access, set up once:
+
+```sh
+# on your own machine: make a dedicated deploy key (no passphrase)
+ssh-keygen -t ed25519 -f deploy_key -N "" -C "movie-cabinet-deploy"
+
+# authorize it on the droplet
+ssh-copy-id -f -i deploy_key.pub root@YOUR_DROPLET_IP
+```
+
+Then in the GitHub repo, go to **Settings → Secrets and variables → Actions** and add
+two repository secrets:
+
+- `DROPLET_HOST` — the droplet's IP or domain
+- `DROPLET_SSH_KEY` — the **contents of the private** `deploy_key` file
+
+Delete the local `deploy_key` files afterwards if you like — GitHub keeps the copy it
+needs. From then on, merging a PR into `main` ships to the droplet automatically
+(fetch, reset to `origin/main`, refresh dependencies, restart the service). Until the
+secrets exist, the workflow simply skips itself, so merges are safe before the droplet
+is set up. You can also trigger it by hand from the Actions tab ("Run workflow").
 
 ## Troubleshooting
 
