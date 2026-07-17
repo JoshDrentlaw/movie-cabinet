@@ -24,6 +24,11 @@ export function layout(title: string, body: string): string {
     <a href="/add">+ Add movie</a>
     <a href="/booklets">Booklets</a>
     <a href="/print/movies">Print labels</a>
+    ${
+    Deno.env.get("AUTH_PASSWORD")
+      ? `<form method="post" action="/logout" class="logout-form"><button type="submit" class="linklike">Log out</button></form>`
+      : ""
+  }
   </nav>
 </header>
 <main>
@@ -347,6 +352,34 @@ ${
   <button class="danger" type="submit">Delete booklet</button>
 </form>`,
   );
+}
+
+export function loginPage(next: string, failed: boolean): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Movie Cabinet</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="login-body">
+<main class="login-main">
+  <section class="card login-card">
+    <h1>🎬 Movie Cabinet</h1>
+    ${failed ? `<p class="error">That password didn't match — try again.</p>` : ""}
+    <form method="post" action="/login" class="stack">
+      <input type="hidden" name="next" value="${esc(next)}">
+      <label>Family password
+        <input name="password" type="password" required autofocus autocomplete="current-password">
+      </label>
+      <button type="submit">Sign in</button>
+    </form>
+    <p class="hint">You'll stay signed in on this device, so you should only ever see this once.</p>
+  </section>
+</main>
+</body>
+</html>`;
 }
 
 export interface Label {

@@ -1,0 +1,8 @@
+# /etc/caddy/Caddyfile
+# Replace movies.example.com with your real (sub)domain.
+# Caddy fetches and renews the HTTPS certificate automatically.
+
+movies.example.com {
+	reverse_proxy localhost:8000
+	encode gzip
+}

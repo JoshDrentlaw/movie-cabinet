@@ -1,3 +1,11 @@
+import {
+  authEnabled,
+  checkPassword,
+  clearSessionCookie,
+  isAuthorized,
+  sessionCookie,
+  sessionToken,
+} from "./auth.ts";
 import { Catalog, groupByGenre, sortTitle } from "./db.ts";
 import { bookletId, movieId } from "./id.ts";
 import { movieDetails, searchMovies, tmdbKey } from "./tmdb.ts";
@@ -24,12 +32,23 @@ function notFound(what: string): Response {
   return html(views.layout("Not found", `<h1>Not found</h1><p>${views.esc(what)}</p>`), 404);
 }
 
+/** True when the original request was HTTPS (directly or via a reverse proxy). */
+function isSecure(req: Request): boolean {
+  return req.headers.get("x-forwarded-proto") === "https" ||
+    new URL(req.url).protocol === "https:";
+}
+
 /** Absolute base URL for QR codes: BASE_URL env if set, else derived from the request. */
 function baseUrl(req: Request): string {
   const configured = Deno.env.get("BASE_URL");
   if (configured) return configured.replace(/\/$/, "");
   const url = new URL(req.url);
-  return `${url.protocol}//${url.host}`;
+  return `${isSecure(req) ? "https" : "http"}://${url.host}`;
+}
+
+/** Only ever redirect back to a local path, never an absolute URL. */
+function safeNext(raw: string | null): string {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
 }
 
 async function createMovieFromForm(form: FormData): Promise<string> {
@@ -82,7 +101,7 @@ async function handle(req: Request): Promise<Response> {
   const path = url.pathname;
   const method = req.method;
 
-  // static
+  // static (public — the login page needs the stylesheet)
   if (path.startsWith("/static/")) {
     try {
       const file = await Deno.readFile("." + path);
@@ -91,6 +110,43 @@ async function handle(req: Request): Promise<Response> {
     } catch {
       return notFound(path);
     }
+  }
+
+  // login / logout
+  if (path === "/login" && method === "GET") {
+    if (!authEnabled() || (await isAuthorized(req))) return redirect("/");
+    return html(
+      views.loginPage(safeNext(url.searchParams.get("next")), url.searchParams.has("failed")),
+    );
+  }
+
+  if (path === "/login" && method === "POST") {
+    const form = await req.formData();
+    const next = safeNext(String(form.get("next") || "/"));
+    if (await checkPassword(String(form.get("password") || ""))) {
+      return new Response(null, {
+        status: 303,
+        headers: {
+          location: next,
+          "set-cookie": sessionCookie(await sessionToken(), isSecure(req)),
+        },
+      });
+    }
+    // slow down guessing a bit
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return redirect(`/login?failed=1&next=${encodeURIComponent(next)}`);
+  }
+
+  if (path === "/logout" && method === "POST") {
+    return new Response(null, {
+      status: 303,
+      headers: { location: "/login", "set-cookie": clearSessionCookie(isSecure(req)) },
+    });
+  }
+
+  // everything else requires a session when a password is configured
+  if (authEnabled() && !(await isAuthorized(req))) {
+    return redirect(`/login?next=${encodeURIComponent(path + url.search)}`);
   }
 
   // home: genres, alphabetical within each
