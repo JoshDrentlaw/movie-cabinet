@@ -1,0 +1,24 @@
+[Unit]
+Description=Movie Cabinet catalog
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=cabinet
+Group=cabinet
+WorkingDirectory=/opt/movie-cabinet
+EnvironmentFile=/etc/movie-cabinet.env
+Environment=DENO_DIR=/var/lib/movie-cabinet/.deno
+ExecStart=/usr/local/bin/deno run --allow-net --allow-env --allow-read --allow-write src/main.ts
+Restart=always
+RestartSec=3
+
+# hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/movie-cabinet
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

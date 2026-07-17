@@ -124,6 +124,19 @@ button.danger { background: #fff; color: #a02020; border: 1px solid #a02020; mar
 
 .empty { color: var(--muted); padding: 2rem 0; }
 
+/* ---------- login ---------- */
+.login-body { display: flex; min-height: 100vh; align-items: center; justify-content: center; }
+.login-main { width: 100%; max-width: 24rem; padding: 1rem; }
+.login-card { text-align: center; }
+.login-card .stack { max-width: none; text-align: left; }
+.logout-form { display: inline; }
+.linklike {
+  background: none; border: none; padding: 0;
+  color: var(--accent-ink); font-weight: bold; cursor: pointer;
+  opacity: 0.8;
+}
+.linklike:hover { opacity: 1; text-decoration: underline; }
+
 /* ---------- printable label sheets ---------- */
 .label-sheet {
   display: grid;
