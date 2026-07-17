@@ -1,0 +1,13 @@
+{
+  "tasks": {
+    "start": "deno run --allow-net --allow-env --allow-read --allow-write src/main.ts",
+    "dev": "deno run --watch --allow-net --allow-env --allow-read --allow-write src/main.ts",
+    "test": "deno test --allow-read --allow-write --allow-env tests/"
+  },
+  "imports": {
+    "qrcode": "npm:qrcode@1.5.4"
+  },
+  "fmt": {
+    "lineWidth": 100
+  }
+}
