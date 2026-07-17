@@ -1,0 +1,49 @@
+# Redeploys the droplet on every merge to main.
+#
+# Requires two repository secrets (Settings → Secrets and variables → Actions):
+#   DROPLET_HOST     - the droplet's IP or hostname (e.g. moviecabinet.joshdrentlaw.com)
+#   DROPLET_SSH_KEY  - a private SSH key whose public half is in the droplet's
+#                      /root/.ssh/authorized_keys (see deploy/DEPLOY.md)
+#
+# Until those secrets are set, the deploy step is skipped and the workflow
+# still passes — so merging is safe before the droplet exists.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_DEPLOY_SECRETS: ${{ secrets.DROPLET_HOST != '' && secrets.DROPLET_SSH_KEY != '' }}
+    steps:
+      - name: Deploy over SSH
+        if: env.HAS_DEPLOY_SECRETS == 'true'
+        env:
+          SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+          HOST: ${{ secrets.DROPLET_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new "root@$HOST" '
+            set -euo pipefail
+            cd /opt/movie-cabinet
+            git fetch origin main
+            git reset --hard origin/main
+            sudo -u cabinet DENO_DIR=/var/lib/movie-cabinet/.deno deno install --entrypoint src/main.ts
+            systemctl restart movie-cabinet
+            systemctl --no-pager --lines=0 status movie-cabinet
+          '
+
+      - name: Skipped (no droplet secrets configured)
+        if: env.HAS_DEPLOY_SECRETS != 'true'
+        run: echo "DROPLET_HOST / DROPLET_SSH_KEY secrets not set - skipping deploy."

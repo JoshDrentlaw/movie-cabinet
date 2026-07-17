@@ -167,6 +167,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@std/assert@1",
       "npm:qrcode@1.5.4"
     ]
   }
